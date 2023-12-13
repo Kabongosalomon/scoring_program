@@ -1083,15 +1083,18 @@ def main(argv):
             input_dir, "res", str(folder_idx), "annotations.txt"
         )
 
-        with open(gold_reference_path, "r") as file:
-            # content_gold = file.readlines()
-            content_gold = [line.strip() for line in file.readlines()]
-            # content_gold = file.read().strip()
+        try:
+            with open(gold_reference_path, "r") as file:
+                content_gold = [line.strip() for line in file.readlines()]
+        except Exception as e:
+            sys.exit(f"Number of entries between gold and pred doesn't match")
 
-        with open(task_submission_path, "r") as file:
-            # content_sub = file.readlines()
-            content_sub = [line.strip() for line in file.readlines()]
-            # content_sub = file.read().strip()
+        try:
+            with open(task_submission_path, "r") as file:
+                content_sub = [line.strip() for line in file.readlines()]
+        except Exception as e:
+            # print(e)
+            sys.exit(f"Number of entries between gold and pred doesn't match")
 
         list_gold.extend(content_gold)
         list_sub.extend(content_sub)
