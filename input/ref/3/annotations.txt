@@ -1,0 +1,3 @@
+[{"LEADERBOARD": { "Task": "Person Re-Identification", "Dataset": "Market-1501", "Metric": "MAP", "Score": "35.43"}}, { "LEADERBOARD": { "Task": "Person Re-Identification", "Dataset": "Market-1501", "Metric": "Rank-1", "Score": "61.79"}}]
+[{"LEADERBOARD": { "Task": "Person Re-Identification", "Dataset": "Market", "Metric": "ACC", "Score": "35"}}, { "LEADERBOARD": { "Task": "Person Re-Identification", "Dataset": "Market", "Metric": "Rank-1", "Score": "61.79"}}]
+[{"LEADERBOARD": { "Task": "De-Identification", "Dataset": "Roza", "Metric": "AUC", "Score": "56"}}, { "LEADERBOARD": { "Task": "De-Identification", "Dataset": "Market", "Metric": "Rank-5", "Score": "76"}}]
