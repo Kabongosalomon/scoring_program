@@ -405,16 +405,16 @@ def make_list_of_pairs_json_based(label_list, prediction_list):
                     try:
                         item1_str = json.dumps(item1)
                     except:
-                        print("Issue parsing dict")
-                        print(item1)
+                        # print("Issue parsing dict")
+                        # print(item1)
                         continue
 
                 if isinstance(item2, dict):
                     try:
                         item2_str = json.dumps(item2)
                     except:
-                        print("Issue parsing dict")
-                        print(item2)
+                        # print("Issue parsing dict")
+                        # print(item2)
                         continue
 
                 pair_list.append(
@@ -1087,7 +1087,8 @@ def main(argv):
             with open(gold_reference_path, "r") as file:
                 content_gold = [line.strip() for line in file.readlines()]
         except Exception as e:
-            print(e)
+            # print(e)
+            pass
             # sys.exit(f"Number of entries between gold and pred doesn't match")
 
         try:
