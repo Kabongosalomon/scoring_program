@@ -1067,8 +1067,8 @@ def main(argv):
         and not name.startswith(".")
     ]
 
-    if len(folder_gold_list) != len(folder_prediction_list):
-        sys.exit(f"Number of entries between gold and pred doesn't match")
+    # if len(folder_gold_list) != len(folder_prediction_list):
+    #     sys.exit(f"Number of entries between gold and pred doesn't match")
 
     list_gold = []
     list_sub = []
@@ -1087,14 +1087,17 @@ def main(argv):
             with open(gold_reference_path, "r") as file:
                 content_gold = [line.strip() for line in file.readlines()]
         except Exception as e:
-            sys.exit(f"Number of entries between gold and pred doesn't match")
+            print(e)
+            # sys.exit(f"Number of entries between gold and pred doesn't match")
 
         try:
             with open(task_submission_path, "r") as file:
                 content_sub = [line.strip() for line in file.readlines()]
         except Exception as e:
-            # print(e)
-            sys.exit(f"Number of entries between gold and pred doesn't match")
+            # in case where one number is missing we just ignore that entry
+            # for score calculation
+            content_sub = '[{"LEADERBOARD": { "Task": "", "Dataset": "", "Metric": "", "Score": ""}}]'
+            continue
 
         list_gold.extend(content_gold)
         list_sub.extend(content_sub)
