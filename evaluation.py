@@ -1097,8 +1097,10 @@ def main(argv):
         except Exception as e:
             # in case where one number is missing we just ignore that entry
             # for score calculation
-            content_sub = '[{"LEADERBOARD": { "Task": "", "Dataset": "", "Metric": "", "Score": ""}}]'
-            continue
+            content_sub = []
+            for numb in range(len(content_gold)):
+                missed = '[{"LEADERBOARD": { "Task": "", "Dataset": "", "Metric": "", "Score": ""}}]'
+                content_sub.append(missed)
 
         list_gold.extend(content_gold)
         list_sub.extend(content_sub)
