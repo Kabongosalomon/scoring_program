@@ -18,6 +18,7 @@ from fuzzywuzzy import fuzz
 
 numpy.random.seed(42)
 unanswerable = "unanswerable"
+# unanswerable = ""
 
 
 feature_names = ["task", "dataset", "metric"]
@@ -1094,6 +1095,17 @@ def main(argv):
         try:
             with open(task_submission_path, "r") as file:
                 content_sub = [line.strip() for line in file.readlines()]
+                # if prediction less than GT
+                if len(content_sub) < len(content_gold):
+                    for _ in range(abs(len(content_gold) - len(content_sub))):
+                        content_sub.append(
+                            '[{"LEADERBOARD": { "Task": "", "Dataset": "", "Metric": "", "Score": ""}}]'
+                        )
+                # if prediction is more than expected TODO: Confirm with jennifer
+                elif len(content_sub) > len(content_gold):
+                    for _ in range(abs(len(content_sub) - len(content_gold))):
+                        content_sub.pop()
+
         except Exception as e:
             # in case where one number is missing we just ignore that entry
             # for score calculation
