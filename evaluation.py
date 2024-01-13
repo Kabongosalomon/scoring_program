@@ -1038,11 +1038,6 @@ class Metrics:
 #####################################################################################################################################################
 
 
-# tasks = ["machine-translation", "named-entity-recognition"]
-
-# # tasks = ["machine-translation", "named-entity-recognition", "question-answering", "relation-classification", "text-classification"]
-
-
 def main(argv):
     # https://github.com/felipebravom/EmoInt/blob/master/codalab/scoring_program/
     # as per the metadata file, input and output directories are the arguments
@@ -1051,8 +1046,21 @@ def main(argv):
 
     # unzipped submission data is always in the 'res' subdirectory
     # https://github.com/codalab/codalab-competitions/wiki/User_Building-a-Scoring-Program-for-a-Competition#directory-structure-for-submissions
-    gold_dir = os.path.join(input_dir, "ref")
-    submission_dir = os.path.join(input_dir, "res")
+
+    ref_folder_name = "ref"
+    pred_folder_name = "res"
+
+    # ref_folder_name = "ref_format"
+    # pred_folder_name = "res_format"
+
+    # ref_folder_name = "ref_format_exact"
+    # pred_folder_name = "res_format_exact"
+
+    # ref_folder_name = "ref_no_format_exact"
+    # pred_folder_name = "res_no_format_exact"
+
+    gold_dir = os.path.join(input_dir, ref_folder_name)
+    submission_dir = os.path.join(input_dir, pred_folder_name)
 
     # can change
     folder_gold_list = [
@@ -1068,54 +1076,34 @@ def main(argv):
         and not name.startswith(".")
     ]
 
-    # if len(folder_gold_list) != len(folder_prediction_list):
-    #     sys.exit(f"Number of entries between gold and pred doesn't match")
-
     list_gold = []
     list_sub = []
 
     for folder_idx in folder_gold_list:
         # evaluate phrases
         gold_reference_path = os.path.join(
-            input_dir, "ref", str(folder_idx), "annotations.txt"
+            input_dir, ref_folder_name, str(folder_idx), "annotations.txt"
         )
 
         task_submission_path = os.path.join(
-            input_dir, "res", str(folder_idx), "annotations.txt"
+            input_dir, pred_folder_name, str(folder_idx), "annotations.txt"
         )
 
         try:
             with open(gold_reference_path, "r") as file:
-                content_gold = [line.strip() for line in file.readlines()]
+                content_gold = file.read()
         except Exception as e:
-            # print(e)
-            pass
-            # sys.exit(f"Number of entries between gold and pred doesn't match")
+            content_gold = '[{"LEADERBOARD": { "Task": "", "Dataset": "", "Metric": "", "Score": ""}}]'
 
         try:
             with open(task_submission_path, "r") as file:
-                content_sub = [line.strip() for line in file.readlines()]
-                # if prediction less than GT
-                if len(content_sub) < len(content_gold):
-                    for _ in range(abs(len(content_gold) - len(content_sub))):
-                        content_sub.append(
-                            '[{"LEADERBOARD": { "Task": "", "Dataset": "", "Metric": "", "Score": ""}}]'
-                        )
-                # if prediction is more than expected TODO: Confirm with jennifer
-                elif len(content_sub) > len(content_gold):
-                    for _ in range(abs(len(content_sub) - len(content_gold))):
-                        content_sub.pop()
+                content_sub = file.read()
 
         except Exception as e:
-            # in case where one number is missing we just ignore that entry
-            # for score calculation
-            content_sub = []
-            for numb in range(len(content_gold)):
-                missed = '[{"LEADERBOARD": { "Task": "", "Dataset": "", "Metric": "", "Score": ""}}]'
-                content_sub.append(missed)
+            content_sub = '[{"LEADERBOARD": { "Task": "", "Dataset": "", "Metric": "", "Score": ""}}]'
 
-        list_gold.extend(content_gold)
-        list_sub.extend(content_sub)
+        list_gold.append(content_gold)
+        list_sub.append(content_sub)
 
     results = Metrics.evaluate_property_wise_json_based(
         label_list=list_gold, prediction_list=list_sub
