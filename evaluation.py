@@ -18,6 +18,7 @@ from fuzzywuzzy import fuzz
 
 numpy.random.seed(42)
 unanswerable = "unanswerable"
+# unanswerable = ""
 
 
 feature_names = ["task", "dataset", "metric"]
@@ -405,16 +406,16 @@ def make_list_of_pairs_json_based(label_list, prediction_list):
                     try:
                         item1_str = json.dumps(item1)
                     except:
-                        print("Issue parsing dict")
-                        print(item1)
+                        # print("Issue parsing dict")
+                        # print(item1)
                         continue
 
                 if isinstance(item2, dict):
                     try:
                         item2_str = json.dumps(item2)
                     except:
-                        print("Issue parsing dict")
-                        print(item2)
+                        # print("Issue parsing dict")
+                        # print(item2)
                         continue
 
                 pair_list.append(
@@ -1037,11 +1038,6 @@ class Metrics:
 #####################################################################################################################################################
 
 
-# tasks = ["machine-translation", "named-entity-recognition"]
-
-# # tasks = ["machine-translation", "named-entity-recognition", "question-answering", "relation-classification", "text-classification"]
-
-
 def main(argv):
     # https://github.com/felipebravom/EmoInt/blob/master/codalab/scoring_program/
     # as per the metadata file, input and output directories are the arguments
@@ -1050,8 +1046,21 @@ def main(argv):
 
     # unzipped submission data is always in the 'res' subdirectory
     # https://github.com/codalab/codalab-competitions/wiki/User_Building-a-Scoring-Program-for-a-Competition#directory-structure-for-submissions
-    gold_dir = os.path.join(input_dir, "ref")
-    submission_dir = os.path.join(input_dir, "res")
+
+    ref_folder_name = "ref"
+    pred_folder_name = "res"
+
+    # ref_folder_name = "ref_format"
+    # pred_folder_name = "res_format"
+
+    # ref_folder_name = "ref_format_exact"
+    # pred_folder_name = "res_format_exact"
+
+    # ref_folder_name = "ref_no_format_exact"
+    # pred_folder_name = "res_no_format_exact"
+
+    gold_dir = os.path.join(input_dir, ref_folder_name)
+    submission_dir = os.path.join(input_dir, pred_folder_name)
 
     # can change
     folder_gold_list = [
@@ -1067,37 +1076,34 @@ def main(argv):
         and not name.startswith(".")
     ]
 
-    if len(folder_gold_list) != len(folder_prediction_list):
-        sys.exit(f"Number of entries between gold and pred doesn't match")
-
     list_gold = []
     list_sub = []
 
     for folder_idx in folder_gold_list:
         # evaluate phrases
         gold_reference_path = os.path.join(
-            input_dir, "ref", str(folder_idx), "annotations.txt"
+            input_dir, ref_folder_name, str(folder_idx), "annotations.txt"
         )
 
         task_submission_path = os.path.join(
-            input_dir, "res", str(folder_idx), "annotations.txt"
+            input_dir, pred_folder_name, str(folder_idx), "annotations.txt"
         )
 
         try:
             with open(gold_reference_path, "r") as file:
-                content_gold = [line.strip() for line in file.readlines()]
+                content_gold = file.read()
         except Exception as e:
-            sys.exit(f"Number of entries between gold and pred doesn't match")
+            content_gold = '[{"LEADERBOARD": { "Task": "", "Dataset": "", "Metric": "", "Score": ""}}]'
 
         try:
             with open(task_submission_path, "r") as file:
-                content_sub = [line.strip() for line in file.readlines()]
-        except Exception as e:
-            # print(e)
-            sys.exit(f"Number of entries between gold and pred doesn't match")
+                content_sub = file.read()
 
-        list_gold.extend(content_gold)
-        list_sub.extend(content_sub)
+        except Exception as e:
+            content_sub = '[{"LEADERBOARD": { "Task": "", "Dataset": "", "Metric": "", "Score": ""}}]'
+
+        list_gold.append(content_gold)
+        list_sub.append(content_sub)
 
     results = Metrics.evaluate_property_wise_json_based(
         label_list=list_gold, prediction_list=list_sub
