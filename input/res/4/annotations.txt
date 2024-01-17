@@ -1,7 +1,7 @@
 [
   {
     "LEADERBOARD": {
-      "Task": "Person Re-Identification",
+      "Task": "Match",
       "Dataset": "Market-1501",
       "Metric": "MAP",
       "Score": "35.43"
