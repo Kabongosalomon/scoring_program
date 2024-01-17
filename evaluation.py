@@ -392,6 +392,19 @@ def make_list_of_pairs_text_based(label_list, prediction_list):
 
 
 def make_list_of_pairs_json_based(label_list, prediction_list):
+    """_summary_
+
+    THis takes care of cases where the prediction is not aligned with the ground truth
+    by using the fuzzy sscore to pair together predictions that are most likelly to be the same
+
+    Args:
+        label_list (_type_): _description_
+        prediction_list (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     # make list of (label,prediction,similarity)
     list_of_label_prediction_pairs = []
     for label, prediction in zip(label_list, prediction_list):
@@ -405,6 +418,10 @@ def make_list_of_pairs_json_based(label_list, prediction_list):
                 if isinstance(item1, dict):
                     try:
                         item1_str = json.dumps(item1)
+                        task_label = item1["LEADERBOARD"]["Task"]
+                        dataset_label = item1["LEADERBOARD"]["Dataset"]
+                        metric_label = item1["LEADERBOARD"]["Metric"]
+                        score_label = item1["LEADERBOARD"]["Score"]
                     except:
                         # print("Issue parsing dict")
                         # print(item1)
@@ -413,14 +430,33 @@ def make_list_of_pairs_json_based(label_list, prediction_list):
                 if isinstance(item2, dict):
                     try:
                         item2_str = json.dumps(item2)
+                        task_pred = item2["LEADERBOARD"]["Task"]
+                        dataset_pred = item2["LEADERBOARD"]["Dataset"]
+                        metric_pred = item2["LEADERBOARD"]["Metric"]
+                        score_pred = item2["LEADERBOARD"]["Score"]
                     except:
                         # print("Issue parsing dict")
                         # print(item2)
                         continue
 
-                pair_list.append(
-                    (item1, item2, calculate_fuzz_ratio(item1_str, item2_str))
-                )
+                if not isinstance(item1, dict) or not isinstance(item2, dict):
+                    pair_list.append(
+                        (item1, item2, calculate_fuzz_ratio(item1_str, item2_str))
+                    )
+                else:
+                    task_ratio = calculate_fuzz_ratio(task_label, task_pred)
+                    dataset_ratio = calculate_fuzz_ratio(dataset_label, dataset_pred)
+                    metric_ratio = calculate_fuzz_ratio(metric_label, metric_pred)
+                    score_ratio = calculate_fuzz_ratio(score_label, score_pred)
+
+                    pair_list.append(
+                        (
+                            item1,
+                            item2,
+                            (task_ratio + dataset_ratio + metric_ratio + score_ratio)
+                            / 5,
+                        )
+                    )
 
         max_selectable_pairs = min(
             len(label_contribution_list), len(prediction_contribution_list)
