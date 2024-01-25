@@ -12,11 +12,12 @@ from os import walk
 
 import evaluate
 import ipdb
-import numpy
+import numpy as np
 import scipy.stats
 from fuzzywuzzy import fuzz
+from scipy.optimize import linear_sum_assignment
 
-numpy.random.seed(42)
+np.random.seed(42)
 unanswerable = "unanswerable"
 # unanswerable = ""
 
@@ -391,6 +392,54 @@ def make_list_of_pairs_text_based(label_list, prediction_list):
     return list_of_label_prediction_pairs
 
 
+def apply_hungarian_algorithm(data_with_similarity_scores, len_gt, len_pred):
+    """_summary_
+    The Hungarian Algorithm will be used to find the optimal assignment between ground truth entries and predictions that maximizes the total similarity score.
+    Returns:
+        _type_: _description_
+    """
+    # Transforming data into a matrix
+    num_gt = len_gt  # Number of ground truth entries
+    num_pred = len_pred  # Number of predictions
+    similarity_matrix = np.zeros((num_gt, num_pred))
+
+    # Filling the similarity matrix with provided scores
+    for i in range(num_gt):
+        for j in range(num_pred):
+            similarity_matrix[i, j] = data_with_similarity_scores[i * num_pred + j][2]
+
+    # Convert to cost matrix for Hungarian algorithm
+    max_similarity = 100  # Assuming 100 is the maximum possible similarity score
+    cost_matrix = max_similarity - similarity_matrix
+
+    # Apply the Hungarian algorithm to find the optimal assignment
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+
+    # Extract the matched pairs and their similarity scores
+    matched_pairs = [(row_ind[i], col_ind[i]) for i in range(len(row_ind))]
+    matched_similarity_scores = [
+        similarity_matrix[row, col] for row, col in matched_pairs
+    ]
+
+    matched_pairs, matched_similarity_scores
+
+    # Reformatting the matched pairs to include the original data and similarity scores
+    formatted_results = []
+
+    for row, col in matched_pairs:
+        # Retrieve the original ground truth and prediction entries
+        ground_truth_entry = data_with_similarity_scores[row * num_pred + col][0]
+        prediction_entry = data_with_similarity_scores[row * num_pred + col][1]
+        # Retrieve the similarity score
+        similarity_score = similarity_matrix[row, col]
+
+        # Append to the results in the desired format
+        formatted_result = (ground_truth_entry, prediction_entry, similarity_score)
+        formatted_results.append(formatted_result)
+
+    return formatted_results
+
+
 def make_list_of_pairs_json_based(label_list, prediction_list):
     """_summary_
 
@@ -418,10 +467,6 @@ def make_list_of_pairs_json_based(label_list, prediction_list):
                 if isinstance(item1, dict):
                     try:
                         item1_str = json.dumps(item1)
-                        task_label = item1["LEADERBOARD"]["Task"]
-                        dataset_label = item1["LEADERBOARD"]["Dataset"]
-                        metric_label = item1["LEADERBOARD"]["Metric"]
-                        score_label = item1["LEADERBOARD"]["Score"]
                     except:
                         # print("Issue parsing dict")
                         # print(item1)
@@ -430,40 +475,21 @@ def make_list_of_pairs_json_based(label_list, prediction_list):
                 if isinstance(item2, dict):
                     try:
                         item2_str = json.dumps(item2)
-                        task_pred = item2["LEADERBOARD"]["Task"]
-                        dataset_pred = item2["LEADERBOARD"]["Dataset"]
-                        metric_pred = item2["LEADERBOARD"]["Metric"]
-                        score_pred = item2["LEADERBOARD"]["Score"]
                     except:
                         # print("Issue parsing dict")
                         # print(item2)
                         continue
 
-                if not isinstance(item1, dict) or not isinstance(item2, dict):
-                    pair_list.append(
-                        (item1, item2, calculate_fuzz_ratio(item1_str, item2_str))
-                    )
-                else:
-                    task_ratio = calculate_fuzz_ratio(task_label, task_pred)
-                    dataset_ratio = calculate_fuzz_ratio(dataset_label, dataset_pred)
-                    metric_ratio = calculate_fuzz_ratio(metric_label, metric_pred)
-                    score_ratio = calculate_fuzz_ratio(score_label, score_pred)
+                pair_list.append(
+                    (item1, item2, calculate_fuzz_ratio(item1_str, item2_str))
+                )
 
-                    pair_list.append(
-                        (
-                            item1,
-                            item2,
-                            (task_ratio + dataset_ratio + metric_ratio + score_ratio)
-                            / 5,
-                        )
-                    )
-
-        max_selectable_pairs = min(
-            len(label_contribution_list), len(prediction_contribution_list)
+        top_similar_pairs = apply_hungarian_algorithm(
+            pair_list,
+            len_gt=len(label_contribution_list),
+            len_pred=len(prediction_contribution_list),
         )
-        top_similar_pairs = sorted(pair_list, key=lambda x: x[2], reverse=True)[
-            :max_selectable_pairs
-        ]
+
         list_of_label_prediction_pairs.extend(top_similar_pairs)
 
     return list_of_label_prediction_pairs
@@ -1118,11 +1144,11 @@ def main(argv):
     for folder_idx in folder_gold_list:
         # evaluate phrases
         gold_reference_path = os.path.join(
-            input_dir, ref_folder_name, str(folder_idx), "annotations.txt"
+            input_dir, ref_folder_name, str(folder_idx), "annotations.json"
         )
 
         task_submission_path = os.path.join(
-            input_dir, pred_folder_name, str(folder_idx), "annotations.txt"
+            input_dir, pred_folder_name, str(folder_idx), "annotations.json"
         )
 
         try:
